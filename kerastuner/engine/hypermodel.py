@@ -56,6 +56,17 @@ class HyperModel(object):
         """
         raise NotImplementedError
 
+    def model_size_under_max(self, hp):
+        """Checks if model size is under max.
+
+        # Arguments:
+            hp: A `HyperParameters` instance.
+
+        # Returns:
+            Weather model is buildable or not.
+        """
+        raise NotImplementedError
+
     def _build_wrapper(self, hp, *args, **kwargs):
         if not self.tunable:
             # Copy `HyperParameters` object so that new entries are not added
@@ -130,6 +141,15 @@ class KerasHyperModel(HyperModel):
             break
 
         return self._compile_model(model)
+
+    def model_size_under_max(self, hp):
+        # Check model size.
+        model = self.hypermodel.build(hp)
+        size = maybe_compute_model_size(model)
+        if self.max_model_size and size > self.max_model_size:
+            print('Oversized model: %s parameters -- skipping' % (size))
+            return False
+        return True
 
     def _compile_model(self, model):
         with maybe_distribute(self.distribution_strategy):

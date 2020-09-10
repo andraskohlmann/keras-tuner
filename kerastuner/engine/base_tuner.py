@@ -126,12 +126,19 @@ class BaseTuner(stateful.Stateful):
             if trial.status == trial_module.TrialStatus.IDLE:
                 # Oracle is calculating, resend request.
                 continue
+            if not self.model_size_under_max(trial):
+                self.oracle.end_trial(trial.trial_id, trial_module.TrialStatus.INVALID)
+                continue
+
 
             self.on_trial_begin(trial)
             self.run_trial(trial, *fit_args, **fit_kwargs)
             self.on_trial_end(trial)
         self.on_search_end()
-
+    
+    def model_size_under_max(self, trial):
+        return self.hypermodel.model_size_under_max(trial.hyperparameters)
+    
     def run_trial(self, trial, *fit_args, **fit_kwargs):
         """Evaluates a set of hyperparameter values.
 
